@@ -12,6 +12,8 @@ CREATE TABLE cached_table (
 );
 
 insert into original (name, photo_url, user_id)
+  Values ('Daisy dukes', 'dumb.com', 2);
+insert into original (name, photo_url, user_id)
   Values ('Black Jeans', 'somesite.com', 2);
 insert into original (name, photo_url, user_id)
   Values ('big cup', 'bingo.com', 1);
@@ -20,7 +22,7 @@ insert into original (name, photo_url, user_id)
 
 
 DROP FUNCTION IF EXISTS cache_items();
-CREATE FUNCTION cache_items() RETURNS integer AS $$
+CREATE FUNCTION cache_items() RETURNS text AS $$
 DECLARE
   citem RECORD;
 BEGIN
@@ -29,15 +31,19 @@ BEGIN
   FOR citem in SELECT * FROM original LOOP
     -- Now citems has one record from original
   
-    RAISE NOTICE 'Caching item %s... ', quote_ident(citem.name);
+    RAISE NOTICE 'Caching item %1... ', quote_ident(citem.name);
     -- insert redis_fdw here
-    /* insert into unvoted values (1, '{"votes": 1, "photo_url": "www.google.com"}'); */
-    EXECUTE format ('INSERT INTO cached_table VALUES %I %p %u', citem.name, citem.photo_url, citem.user_id);
+    -- do i need to call the stringifying funciton from somewhere else into the loop?
+
+    EXECUTE format('insert into cached_table values (''{"votes": 1, "photo_url": "www.google.com"}'')');
+    /* PERFORM format('INSERT INTO cached_table VALUES(hello)'); */
   END LOOP;
 
   RAISE NOTICE 'Done caching items.';
-  RETURN 1;
+  RETURN citem;
 END;
 
 $$ LANGUAGE plpgsql;
+
+SELECT cache_items();
 
