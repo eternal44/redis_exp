@@ -19,17 +19,20 @@ insert into original (name, photo_url, user_id)
   Values ('Blue Jeans', 'www.google.com', 1);
 
 
+DROP FUNCTION IF EXISTS cache_items();
 CREATE FUNCTION cache_items() RETURNS integer AS $$
 DECLARE
-  citems RECORD;
+  citem RECORD;
 BEGIN
   RAISE NOTICE 'Caching the next 10 items...';
 
-  FOR citems in SELECT * FROM original LOOP
+  FOR citem in SELECT * FROM original LOOP
     -- Now citems has one record from original
   
-    RAISE NOTICE 'Caching item... ';
+    RAISE NOTICE 'Caching item %s... ', quote_ident(citem.name);
     -- insert redis_fdw here
+    /* insert into unvoted values (1, '{"votes": 1, "photo_url": "www.google.com"}'); */
+    EXECUTE format ('INSERT INTO cached_table VALUES %I %p %u', citem.name, citem.photo_url, citem.user_id);
   END LOOP;
 
   RAISE NOTICE 'Done caching items.';
